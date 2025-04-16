@@ -256,3 +256,56 @@ if __name__ == "__main__":
         print(f"\nError in main process: {str(e)}")
     finally:
         print("\nProcess completed.")
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+def visualize_results(model, scaler, feature_names):
+    temp_range = np.arange(20.0, 25.1, 0.5)
+    fan_speeds = np.arange(0.4, 1.05, 0.1)
+    results = []
+
+    for temp in temp_range:
+        for fan in fan_speeds:
+            input_dict = {
+                "outside_temp": 30.0,
+                "outside_humidity": 65.0,
+                "inside_temp": 23.0,
+                "inside_humidity": 55.0,
+                "hour": 14,
+                "day_of_week": 2,
+                "month": 4,
+                "temperature_setpoint": temp,
+                "fan_speed": fan
+            }
+            df = pd.DataFrame([input_dict])
+            numeric_cols = df.select_dtypes(include=[np.number]).columns
+            df[numeric_cols] = scaler.transform(df[numeric_cols])
+            pred = model.predict(df[feature_names])[0]
+            results.append((temp, fan, pred))
+
+    df_vis = pd.DataFrame(results, columns=['Temperature', 'Fan Speed', 'Energy'])
+
+    pivot = df_vis.pivot("Temperature", "Fan Speed", "Energy")
+    plt.figure(figsize=(10, 6))
+    sns.heatmap(pivot, annot=True, cmap="coolwarm")
+    plt.title("Predicted Energy Consumption")
+    plt.savefig("images/hvac_optimization_heatmap.png")
+    plt.close()
+    df_vis = pd.DataFrame(results, columns=['Temperature', 'Fan Speed', 'Energy'])
+
+    pivot = df_vis.pivot("Temperature", "Fan Speed", "Energy")
+    plt.figure(figsize=(10, 6))
+    sns.heatmap(pivot, annot=True, cmap="coolwarm", fmt=".1f")
+    plt.title("Predicted Energy Consumption")
+    plt.xlabel("Fan Speed")
+    plt.ylabel("Temperature (°C)")
+    plt.tight_layout()
+    
+    import os
+    os.makedirs("images", exist_ok=True)
+    plt.savefig("images/hvac_optimization_heatmap.png")
+    plt.close()
+print("\nOptimization completed successfully!")
+visualize_results(optimizer.model, optimizer.scaler, optimizer.feature_names)
+
